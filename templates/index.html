@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Food Order & Weather API</title>
+    <!-- CSS styling for webpage -->
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        h1 {
+            color: #343a40;
+            text-align: center;
+        }
+
+        h2 {
+            color: #343a40;
+        }
+
+        #item-list, #category-list, #weather-data {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        li {
+            background-color: #fff;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .update-btn, .delete-btn {
+            background-color: #17a2b8;
+            color: #fff;
+            border: none;
+            margin-right: 5px;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ced4da;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #343a40;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Restaurant Food Order & Weather API</h1>
+
+    <!-- Item section -->
+    <div>
+        <h2>Food Item</h2>
+        <ul class="item-list" id="item-list"></ul>
+        <div>
+            <input type="text" id="item-name" placeholder="Enter item name">
+            <button onclick="addItem()">Add Item</button>
+        </div>
+    </div>
+
+    <!-- Category section -->
+    <div>
+        <h2>Food Category</h2>
+        <ul class="category-list" id="category-list"></ul>
+        <div>
+            <input type="text" id="category-name" placeholder="Enter category name">
+            <button onclick="addCategory()">Add Category</button>
+        </div>
+    </div>
+
+    <!-- Third-party API data section -->
+    <div>
+        <h2>Third-Party API Data</h2>
+        <div id="third-party-data"></div>
+    </div>
+
+    <!-- Weather data section -->
+    <div id="weather-data">
+        <h2>Weather Data</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Apparent Temperature</th>
+                    <th>Rain</th>
+                </tr>
+            </thead>
+            <tbody id="weather-table-body"></tbody>
+        </table>
+    </div>
+    <!-- javascript for adding Item to our DB -->
+    <script>
+        function addItem() {
+            const itemName = document.getElementById('item-name').value;
+            fetch('/api/items', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: itemName }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById('item-name').value = '';
+                fetchItems();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        // Change FethItems function:
+        function fetchItems() {
+            fetch('/api/items')
+            .then(response => response.json())
+            .then(data => {
+                const itemList = document.getElementById('item-list');
+                itemList.innerHTML = '';
+                data.items.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.name} `;
+                    const updateButton = document.createElement('button');
+                    updateButton.textContent = 'Update';
+                    updateButton.className = 'update-btn';
+                    updateButton.onclick = () => updateItem(item.id);
+                    li.appendChild(updateButton);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.className = 'delete-btn';
+                    deleteButton.onclick = () => deleteItem(item.id);
+                    li.appendChild(deleteButton);
+                    itemList.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        // updating Items function:
+        function updateItem(itemId) {
+            const itemName = prompt('Enter new name:');
+            if (itemName !== null) {
+                fetch(`/api/items/${itemId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name: itemName }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    fetchItems();
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        // updating DeleteItems function:
+        function deleteItem(itemId) {
+            if (confirm('Are you sure you want to delete this item?')) {
+                fetch(`/api/items/${itemId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    fetchItems();
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        // adding Category function for our second table:
+        function addCategory() {
+    const categoryName = document.getElementById('category-name').value;
+    console.log('Adding category:', categoryName);
+
+    fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: categoryName }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Response from server:', data);
+        alert(data.message);
+        document.getElementById('category-name').value = '';
+        fetchCategories();
+    })
+    .catch(error => console.error('Error:', error));
+}
+        // fetching our categories function:
+        function fetchCategories() {
+    console.log('Fetching categories...');
+    fetch('/api/categories')
+    .then(response => response.json())
+    .then(data => {
+        console.log('Categories data:', data);
+
+        const categoryList = document.querySelector('.category-list'); // Change this line
+        categoryList.innerHTML = '';
+
+        if (data.categories && data.categories.length > 0) {
+            data.categories.forEach(category => {
+                const li = document.createElement('li');
+                li.textContent = `${category.name} `;
+
+                const updateButton = document.createElement('button');
+                updateButton.textContent = 'Update';
+                updateButton.className = 'update-btn';
+                updateButton.onclick = () => updateCategory(category.id);
+                li.appendChild(updateButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'delete-btn';
+                deleteButton.onclick = () => deleteCategory(category.id);
+                li.appendChild(deleteButton);
+
+                categoryList.appendChild(li);
+            });
+        } else {
+            console.log('No categories found.');
+        }
+    })
+    .catch(error => console.error('Error fetching categories:', error));
+}
+        // updating categories function:
+        function updateCategory(categoryId) {
+            const categoryName = prompt('Enter new name:');
+            if (categoryName !== null) {
+                fetch(`/api/categories/${categoryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name: categoryName }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    fetchCategories();
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        // deleting categories function:
+        function deleteCategory(categoryId) {
+            if (confirm('Are you sure you want to delete this category?')) {
+                fetch(`/api/categories/${categoryId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    fetchCategories();
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        // fethcing 3rd Party API function:
+        function fetchThirdPartyData() {
+            fetch('/api/third_party_data')
+            .then(response => response.json())
+            .then(data => {
+                const thirdPartyDataDiv = document.getElementById('third-party-data');
+                thirdPartyDataDiv.innerHTML = `<p>${JSON.stringify(data)}</p>`;
+            })
+            .catch(error => console.error('Error fetching third-party data:', error));
+        }
+        // Fetching Weather Data function:
+        function fetchWeatherData() {
+            fetch('/api/weather')
+            .then(response => response.json())
+            .then(data => {
+                const weatherTableBody = document.getElementById('weather-table-body');
+                weatherTableBody.innerHTML = '';
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = item.date;
+                    const apparentTemperatureCell = document.createElement('td');
+                    apparentTemperatureCell.textContent = item.apparent_temperature;
+                    const rainCell = document.createElement('td');
+                    rainCell.textContent = item.rain;
+                    row.appendChild(dateCell);
+                    row.appendChild(apparentTemperatureCell);
+                    row.appendChild(rainCell);
+                    weatherTableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching weather data:', error));
+        }
+
+        // Fetch items, categories, third-party data, and weather data when the page loads
+        fetchItems();
+        fetchCategories();
+        fetchThirdPartyData();
+        fetchWeatherData();
+    </script>
+</body>
+</html>
